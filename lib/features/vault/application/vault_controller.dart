@@ -307,6 +307,15 @@ class VaultController extends Notifier<VaultState> {
     }
     try {
       final sync = SyncService(baseUrl: state.syncBaseUrl);
+      if (!silent) {
+        final remote = await sync.pull(userId);
+        if (remote != null && remote.isNotEmpty) {
+          final remoteClients = _repo.decodeClientsPayload(remote);
+          final merged = _mergeClients(state.clients, remoteClients);
+          await _repo.saveClients(merged);
+          state = state.copyWith(clients: merged);
+        }
+      }
       final payload = _repo.encodeClientsPayload(state.clients);
       await sync.push(userId, payload);
       state = state.copyWith(
@@ -320,6 +329,35 @@ class VaultController extends Notifier<VaultState> {
         syncError: silent ? null : 'No se pudo conectar con ${state.syncBaseUrl}',
       );
     }
+  }
+
+  List<ClientRecord> _mergeClients(
+    List<ClientRecord> local,
+    List<ClientRecord> remote,
+  ) {
+    final map = <String, ClientRecord>{};
+    for (final c in remote) {
+      map[c.id] = c;
+    }
+    for (final c in local) {
+      final existing = map[c.id];
+      if (existing == null) {
+        map[c.id] = c;
+      } else {
+        final pageMap = <String, PageCredential>{};
+        for (final p in existing.pages) {
+          pageMap[p.id] = p;
+        }
+        for (final p in c.pages) {
+          pageMap[p.id] = p;
+        }
+        final newer = c.updatedAt.isAfter(existing.updatedAt) ? c : existing;
+        map[c.id] = newer.copyWith(pages: pageMap.values.toList());
+      }
+    }
+    final result = map.values.toList()
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    return result;
   }
 
   Future<void> pullFromServer() async {
