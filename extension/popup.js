@@ -80,6 +80,7 @@ async function saveToAppAndClear() {
   await chrome.storage.local.set({ serverUrl: baseUrl, userId });
 
   const payload = {
+    userId,
     cc: ccInput.value.trim(),
     nombre: nombreInput.value.trim(),
     siteName: siteInput.value.trim(),
@@ -101,7 +102,7 @@ async function saveToAppAndClear() {
   saveBtn.disabled = true;
   try {
     const res = await fetch(
-      `${baseUrl}/api/vault/${encodeURIComponent(userId)}/extension/save`,
+      `${baseUrl}/api/extension-save`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
