@@ -24,7 +24,7 @@ class AuthController extends Notifier<AuthState> {
   AuthState build() => const AuthState();
 
   String _cleanError(Object e) {
-    return e.toString().replaceFirst('Exception: ', '');
+    return e.toString().replaceFirst(RegExp(r'^(Client)?Exception:\s*'), '');
   }
 
   Future<void> register(String email, String password) async {
