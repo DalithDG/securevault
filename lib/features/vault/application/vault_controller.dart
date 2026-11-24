@@ -26,7 +26,7 @@ class VaultState {
     this.syncMessage,
     this.syncError,
     this.lastSyncAt,
-    this.syncBaseUrl = 'https://securevault-276j.onrender.com',
+    this.syncBaseUrl = 'https://securevault-dgteams.vercel.app',
   });
 
   VaultState copyWith({
@@ -283,8 +283,9 @@ class VaultController extends Notifier<VaultState> {
   }
 
   Future<void> setSyncBaseUrl(String url) async {
-    final normalized =
-        url.trim().isEmpty ? 'https://securevault-276j.onrender.com' : url.trim().replaceAll(RegExp(r'/+$'), '');
+    final normalized = url.trim().isEmpty
+        ? 'https://securevault-dgteams.vercel.app'
+        : url.trim().replaceAll(RegExp(r'/+$'), '');
     await _repo.saveSyncUrl(normalized);
     state = state.copyWith(syncBaseUrl: normalized);
   }

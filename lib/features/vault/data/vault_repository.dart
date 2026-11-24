@@ -68,8 +68,11 @@ class VaultRepository {
   Future<String> loadSyncUrl() async {
     final box = await _openBox();
     final saved = (box.get(_syncUrlKey) as String?)?.trim();
-    if (saved == null || saved.isEmpty || saved == 'http://localhost:8080') {
-      return 'https://securevault-276j.onrender.com';
+    if (saved == null ||
+        saved.isEmpty ||
+        saved == 'http://localhost:8080' ||
+        saved == 'https://securevault-276j.onrender.com') {
+      return 'https://securevault-dgteams.vercel.app';
     }
     return saved;
   }

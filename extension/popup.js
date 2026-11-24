@@ -1,4 +1,4 @@
-const DEFAULT_SERVER_URL = 'https://securevault-276j.onrender.com';
+const DEFAULT_SERVER_URL = 'https://securevault-dgteams.vercel.app';
 
 const serverUrlInput = document.getElementById('serverUrlInput');
 const userIdInput = document.getElementById('userIdInput');
