@@ -1,0 +1,8 @@
+spring:
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb+srv://dalithg29_db_user:JFuMsjeqZW2L9w2G@secucode.ufcu1h0.mongodb.net/securevault?retryWrites=true&w=majority}
+server:
+  port: ${PORT:8080}
+  ssl:
+    enabled: false

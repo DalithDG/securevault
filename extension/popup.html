@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    body { width: 350px; font-family: system-ui, sans-serif; padding: 12px; margin: 0; background: #f8f7fc; color: #211a2c; }
+    h3 { color: #7139C9; margin: 0 0 8px; display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+    .head-actions { display: flex; gap: 6px; }
+    .row { display: flex; gap: 6px; margin-bottom: 6px; }
+    input { width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1px solid #d7cff0; border-radius: 8px; font-size: 12px; }
+    button { background: #7139C9; color: white; border: none; padding: 7px 10px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; }
+    button.secondary { background: #ede7fa; color: #4c2394; }
+    .status { font-size: 11px; color: #665c7a; margin-bottom: 8px; }
+    .form-box { background: white; border: 1px solid #d7cff0; border-radius: 10px; padding: 10px; margin-bottom: 10px; display: none; flex-direction: column; gap: 6px; }
+    .form-box.open { display: flex; }
+    .list { max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+    .card { background: white; border: 1px solid #e7e1f5; border-radius: 10px; padding: 10px; }
+    .client { font-size: 11px; color: #7139C9; font-weight: 700; margin-bottom: 2px; }
+    .site { font-size: 13px; font-weight: 700; }
+    .meta { font-size: 11px; color: #5b526d; word-break: break-all; margin: 2px 0; }
+    .actions { display: flex; gap: 6px; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <h3>
+    <span>SecureVault</span>
+    <div class="head-actions">
+      <button id="toggleFormBtn" class="secondary">+ Guardar</button>
+      <button id="syncBtn" class="secondary">Sincronizar</button>
+    </div>
+  </h3>
+
+  <div class="row">
+    <input id="serverUrlInput" placeholder="URL servidor (ej. https://tu-app.onrender.com)" />
+  </div>
+  <div class="row">
+    <input id="userIdInput" placeholder="Correo / ID de usuario" />
+  </div>
+
+  <div id="saveForm" class="form-box">
+    <input id="ccInput" placeholder="CC / Cédula del cliente" />
+    <input id="nombreInput" placeholder="Nombre del cliente" />
+    <input id="siteInput" placeholder="Nombre de la página (opcional)" />
+    <input id="urlInput" placeholder="URL" />
+    <input id="usernameInput" placeholder="Usuario / Correo" />
+    <input id="passwordInput" type="password" placeholder="Password" />
+    <button id="saveBtn">Guardar en SecureVault</button>
+  </div>
+
+  <div class="row">
+    <input id="searchInput" placeholder="Buscar por nombre, CC, URL o usuario..." />
+  </div>
+  <div id="status" class="status">Listo para sincronizar.</div>
+  <div id="list" class="list"></div>
+  <script src="popup.js"></script>
+</body>
+</html>
