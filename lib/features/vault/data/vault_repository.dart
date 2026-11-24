@@ -67,8 +67,11 @@ class VaultRepository {
 
   Future<String> loadSyncUrl() async {
     final box = await _openBox();
-    return (box.get(_syncUrlKey) as String?) ??
-        'https://securevault-276j.onrender.com';
+    final saved = (box.get(_syncUrlKey) as String?)?.trim();
+    if (saved == null || saved.isEmpty || saved == 'http://localhost:8080') {
+      return 'https://securevault-276j.onrender.com';
+    }
+    return saved;
   }
 
   Future<void> saveSyncUrl(String url) async {
