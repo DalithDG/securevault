@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../domain/client_model.dart';
@@ -66,7 +67,8 @@ class VaultRepository {
 
   Future<String> loadSyncUrl() async {
     final box = await _openBox();
-    return (box.get(_syncUrlKey) as String?) ?? 'http://localhost:8080';
+    return (box.get(_syncUrlKey) as String?) ??
+        'https://securevault-276j.onrender.com';
   }
 
   Future<void> saveSyncUrl(String url) async {

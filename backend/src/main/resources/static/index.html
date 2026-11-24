@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SecureVault Web</title>
+  <style>
+    :root {
+      --primary: #7139C9;
+      --primary-soft: #efe8fb;
+      --bg: #f8f7fc;
+      --card: #ffffff;
+      --text: #211a2c;
+      --muted: #665c7a;
+      --border: #e4ddf3;
+      --danger: #d93025;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); }
+    header {
+      background: var(--card); border-bottom: 1px solid var(--border);
+      padding: 14px 24px; display: flex; flex-wrap: wrap; gap: 12px;
+      align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; color: var(--primary); }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    input, textarea {
+      padding: 9px 12px; border: 1px solid var(--border); border-radius: 10px;
+      font-size: 14px; background: #fff; color: var(--text);
+    }
+    button {
+      background: var(--primary); color: #fff; border: none; padding: 9px 14px;
+      border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 14px;
+    }
+    button.secondary { background: var(--primary-soft); color: var(--primary); }
+    button.danger { background: #fdecea; color: var(--danger); }
+    main { max-width: 1100px; margin: 24px auto; padding: 0 16px 60px; }
+    .top-bar { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+    .search { flex: 1; min-width: 240px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; }
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 16px; display: flex; flex-direction: column; gap: 10px;
+    }
+    .card.clickable { cursor: pointer; transition: transform .12s, box-shadow .12s; }
+    .card.clickable:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(113,57,201,.08); }
+    .avatar {
+      width: 40px; height: 40px; border-radius: 50%; background: var(--primary-soft);
+      color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700;
+    }
+    .row { display: flex; align-items: center; gap: 10px; }
+    .between { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .title { font-weight: 700; font-size: 16px; }
+    .muted { color: var(--muted); font-size: 13px; word-break: break-all; }
+    .badge {
+      display: inline-block; background: var(--primary-soft); color: var(--primary);
+      padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600;
+    }
+    .field { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px; border-top: 1px solid var(--border); padding-top: 8px; }
+    .status { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+    dialog {
+      border: none; border-radius: 18px; padding: 20px; width: min(440px, 92vw);
+      box-shadow: 0 18px 40px rgba(0,0,0,.18);
+    }
+    dialog::backdrop { background: rgba(20, 12, 34, .45); }
+    .form-col { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">🛡️ SecureVault Web</div>
+    <div class="toolbar">
+      <input id="userIdInput" placeholder="Correo / ID de usuario" value="default" />
+      <button id="loadBtn" class="secondary">Sincronizar</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="status" class="status">Cargando...</div>
+    <div id="view"></div>
+  </main>
+
+  <dialog id="clientModal">
+    <h3 style="margin:0">Agregar cliente</h3>
+    <div class="form-col">
+      <input id="cCc" placeholder="CC / Cédula" />
+      <input id="cNombre" placeholder="Nombre del cliente" />
+      <div class="between" style="margin-top:6px">
+        <button type="button" class="secondary" onclick="clientModal.close()">Cancelar</button>
+        <button type="button" id="saveClientBtn">Guardar cliente</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="pageModal">
+    <h3 style="margin:0">Agregar página</h3>
+    <div class="form-col">
+      <input id="pSite" placeholder="Nombre de la página (opcional)" />
+      <input id="pUrl" placeholder="URL (https://...)" />
+      <input id="pUser" placeholder="Usuario / Correo" />
+      <input id="pPass" type="text" placeholder="Password" />
+      <div class="between" style="margin-top:6px">
+        <button type="button" class="secondary" onclick="pageModal.close()">Cancelar</button>
+        <button type="button" id="savePageBtn">Guardar página</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+    const userIdInput = document.getElementById('userIdInput');
+    const statusEl = document.getElementById('status');
+    const viewEl = document.getElementById('view');
+    const clientModal = document.getElementById('clientModal');
+    const pageModal = document.getElementById('pageModal');
+
+    let clients = [];
+    let selectedClientId = null;
+    let searchQuery = '';
+    const revealed = new Set();
+
+    userIdInput.value = localStorage.getItem('sv_userId') || 'default';
+
+    function getUserId() {
+      const val = (userIdInput.value || 'default').trim();
+      localStorage.setItem('sv_userId', val);
+      return val;
+    }
+
+    async function loadVault() {
+      const userId = getUserId();
+      statusEl.textContent = 'Sincronizando con MongoDB Atlas...';
+      try {
+        const res = await fetch(`/api/vault/${encodeURIComponent(userId)}`);
+        const data = await res.json();
+        clients = Array.isArray(data.clients) ? data.clients : [];
+        statusEl.textContent = `Conectado (${userId}) • ${clients.length} clientes`;
+        render();
+      } catch (e) {
+        statusEl.textContent = 'Error al conectar con el servidor.';
+      }
+    }
+
+    async function pushVault() {
+      const userId = getUserId();
+      const payload = JSON.stringify({
+        version: 1,
+        updatedAt: new Date().toISOString(),
+        clients,
+      });
+      await fetch(`/api/vault/${encodeURIComponent(userId)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: payload,
+      });
+      statusEl.textContent = `Guardado en MongoDB Atlas (${clients.length} clientes)`;
+      render();
+    }
+
+    function esc(s) {
+      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function copyText(label, val) {
+      navigator.clipboard.writeText(val || '');
+      statusEl.textContent = `${label} copiado al portapapeles`;
+    }
+
+    function render() {
+      if (selectedClientId) {
+        const client = clients.find(c => c.id === selectedClientId);
+        if (!client) { selectedClientId = null; render(); return; }
+        renderClientPages(client);
+      } else {
+        renderClients();
+      }
+    }
+
+    function renderClients() {
+      const q = searchQuery.toLowerCase();
+      const filtered = clients.filter(c =>
+        (c.nombre || '').toLowerCase().includes(q) || (c.cc || '').toLowerCase().includes(q)
+      );
+
+      viewEl.innerHTML = `
+        <div class="top-bar">
+          <input class="search" id="searchBox" placeholder="Buscar cliente por nombre o CC..." value="${esc(searchQuery)}" />
+          <button id="openAddClient">+ Agregar cliente</button>
+        </div>
+        <div class="grid" id="cards"></div>
+      `;
+
+      document.getElementById('searchBox').addEventListener('input', (e) => {
+        searchQuery = e.target.value;
+        renderClients();
+        const box = document.getElementById('searchBox');
+        box.focus();
+        box.setSelectionRange(searchQuery.length, searchQuery.length);
+      });
+
+      document.getElementById('openAddClient').addEventListener('click', () => {
+        document.getElementById('cCc').value = '';
+        document.getElementById('cNombre').value = '';
+        clientModal.showModal();
+      });
+
+      const cards = document.getElementById('cards');
+      if (filtered.length === 0) {
+        cards.innerHTML = '<div class="muted">No hay clientes registrados. Haz clic en "+ Agregar cliente".</div>';
+        return;
+      }
+
+      for (const c of filtered) {
+        const pages = Array.isArray(c.pages) ? c.pages : [];
+        const initials = (c.nombre || 'C').trim().split(/\s+/).slice(0,2).map(p => p[0]?.toUpperCase() || '').join('') || 'C';
+        const card = document.createElement('div');
+        card.className = 'card clickable';
+        card.innerHTML = `
+          <div class="between">
+            <div class="row">
+              <div class="avatar">${esc(initials)}</div>
+              <div>
+                <div class="title">${esc(c.nombre)}</div>
+                <div class="muted">CC: ${esc(c.cc)}</div>
+              </div>
+            </div>
+            <button class="danger del-client" title="Eliminar">✕</button>
+          </div>
+          <div class="between">
+            <span class="badge">${pages.length} ${pages.length === 1 ? 'página' : 'páginas'}</span>
+            <span style="color:var(--primary);font-size:13px;font-weight:600">Ver páginas →</span>
+          </div>
+        `;
+        card.addEventListener('click', (e) => {
+          if (e.target.classList.contains('del-client')) return;
+          selectedClientId = c.id;
+          searchQuery = '';
+          render();
+        });
+        card.querySelector('.del-client').addEventListener('click', async () => {
+          if (!confirm(`¿Eliminar a ${c.nombre}?`)) return;
+          clients = clients.filter(x => x.id !== c.id);
+          await pushVault();
+        });
+        cards.appendChild(card);
+      }
+    }
+
+    function renderClientPages(client) {
+      const pages = Array.isArray(client.pages) ? client.pages : [];
+      viewEl.innerHTML = `
+        <div class="top-bar">
+          <button class="secondary" id="backBtn">← Volver a clientes</button>
+          <div class="title">${esc(client.nombre)} • CC: ${esc(client.cc)}</div>
+          <button id="openAddPage">+ Agregar página</button>
+        </div>
+        <div class="grid" id="pageCards"></div>
+      `;
+
+      document.getElementById('backBtn').addEventListener('click', () => {
+        selectedClientId = null;
+        render();
+      });
+
+      document.getElementById('openAddPage').addEventListener('click', () => {
+        document.getElementById('pSite').value = '';
+        document.getElementById('pUrl').value = '';
+        document.getElementById('pUser').value = '';
+        document.getElementById('pPass').value = '';
+        pageModal.showModal();
+      });
+
+      const box = document.getElementById('pageCards');
+      if (pages.length === 0) {
+        box.innerHTML = '<div class="muted">Este cliente no tiene páginas registradas.</div>';
+        return;
+      }
+
+      for (const p of pages) {
+        const show = revealed.has(p.id);
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="between">
+            <div class="title">${esc(p.siteName || p.url)}</div>
+            <button class="danger del-page">✕</button>
+          </div>
+          <div class="field">
+            <span class="muted">URL: ${esc(p.url)}</span>
+            <button class="secondary copy-url">Copiar</button>
+          </div>
+          <div class="field">
+            <span class="muted">Usuario: ${esc(p.username)}</span>
+            <button class="secondary copy-user">Copiar</button>
+          </div>
+          <div class="field">
+            <span class="muted">Password: ${show ? esc(p.password) : '••••••••'}</span>
+            <div class="row">
+              <button class="secondary toggle-pass">${show ? 'Ocultar' : 'Ver'}</button>
+              <button class="secondary copy-pass">Copiar</button>
+            </div>
+          </div>
+        `;
+        card.querySelector('.copy-url').onclick = () => copyText('URL', p.url);
+        card.querySelector('.copy-user').onclick = () => copyText('Usuario', p.username);
+        card.querySelector('.copy-pass').onclick = () => copyText('Password', p.password);
+        card.querySelector('.toggle-pass').onclick = () => {
+          if (revealed.has(p.id)) revealed.delete(p.id); else revealed.add(p.id);
+          render();
+        };
+        card.querySelector('.del-page').onclick = async () => {
+          if (!confirm(`¿Eliminar página ${p.url}?`)) return;
+          client.pages = client.pages.filter(x => x.id !== p.id);
+          await pushVault();
+        };
+        box.appendChild(card);
+      }
+    }
+
+    document.getElementById('saveClientBtn').addEventListener('click', async () => {
+      const cc = document.getElementById('cCc').value.trim();
+      const nombre = document.getElementById('cNombre').value.trim();
+      if (!cc || !nombre) return alert('Ingresa CC y Nombre');
+      const now = new Date().toISOString();
+      const c = { id: crypto.randomUUID(), cc, nombre, pages: [], createdAt: now, updatedAt: now };
+      clients.unshift(c);
+      clientModal.close();
+      selectedClientId = c.id;
+      await pushVault();
+    });
+
+    document.getElementById('savePageBtn').addEventListener('click', async () => {
+      const client = clients.find(c => c.id === selectedClientId);
+      if (!client) return;
+      const siteName = document.getElementById('pSite').value.trim();
+      const url = document.getElementById('pUrl').value.trim();
+      const username = document.getElementById('pUser').value.trim();
+      const password = document.getElementById('pPass').value;
+      if (!url || !username || !password) return alert('Completa URL, Usuario y Password');
+      client.pages = client.pages || [];
+      client.pages.unshift({
+        id: crypto.randomUUID(),
+        siteName,
+        url,
+        username,
+        password,
+        notes: '',
+        updatedAt: new Date().toISOString(),
+      });
+      pageModal.close();
+      await pushVault();
+    });
+
+    document.getElementById('loadBtn').addEventListener('click', loadVault);
+    loadVault();
+  </script>
+</body>
+</html>

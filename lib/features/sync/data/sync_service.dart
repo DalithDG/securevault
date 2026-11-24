@@ -2,7 +2,7 @@ import 'package:http/http.dart' as http;
 
 class SyncService {
   final String baseUrl;
-  SyncService({this.baseUrl = 'http://localhost:8080'});
+  SyncService({this.baseUrl = 'https://securevault-276j.onrender.com'});
 
   Future<String?> pull(String userId) async {
     final res = await http.get(Uri.parse('$baseUrl/api/vault/$userId'));

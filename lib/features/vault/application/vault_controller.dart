@@ -26,7 +26,7 @@ class VaultState {
     this.syncMessage,
     this.syncError,
     this.lastSyncAt,
-    this.syncBaseUrl = 'http://localhost:8080',
+    this.syncBaseUrl = 'https://securevault-276j.onrender.com',
   });
 
   VaultState copyWith({
@@ -283,7 +283,8 @@ class VaultController extends Notifier<VaultState> {
   }
 
   Future<void> setSyncBaseUrl(String url) async {
-    final normalized = url.trim().isEmpty ? 'http://localhost:8080' : url.trim();
+    final normalized =
+        url.trim().isEmpty ? 'https://securevault-276j.onrender.com' : url.trim().replaceAll(RegExp(r'/+$'), '');
     await _repo.saveSyncUrl(normalized);
     state = state.copyWith(syncBaseUrl: normalized);
   }

@@ -1,4 +1,4 @@
-const DEFAULT_SERVER_URL = 'http://127.0.0.1:8080';
+const DEFAULT_SERVER_URL = 'https://securevault-276j.onrender.com';
 
 const serverUrlInput = document.getElementById('serverUrlInput');
 const userIdInput = document.getElementById('userIdInput');
