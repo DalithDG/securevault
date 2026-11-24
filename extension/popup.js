@@ -101,24 +101,71 @@ async function saveToAppAndClear() {
   setStatus('Enviando datos a la app...');
   saveBtn.disabled = true;
   try {
-    const res = await fetch(
-      `${baseUrl}/api/extension-save`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      },
-    );
-    const raw = await res.text();
-    let data = {};
-    try { data = JSON.parse(raw); } catch (_) {}
-    if (!res.ok || !data.ok) {
-      setStatus(data.error || `Error del servidor (${res.status})`, 'err');
+    const vaultUrl = `${baseUrl}/api/vault/${encodeURIComponent(userId)}`;
+    const getRes = await fetch(vaultUrl);
+    if (!getRes.ok) {
+      setStatus(`Error del servidor (${getRes.status})`, 'err');
       return;
     }
 
+    let root = { version: 1, clients: [] };
+    try {
+      const parsed = await getRes.json();
+      if (parsed && Array.isArray(parsed.clients)) root = parsed;
+    } catch (_) {}
+
+    const clients = root.clients;
+    const now = new Date().toISOString();
+    const newPage = {
+      id: crypto.randomUUID(),
+      siteName: payload.siteName,
+      url: payload.url,
+      username: payload.username,
+      password: payload.password,
+      notes: '',
+      updatedAt: now,
+    };
+
+    let target = clients.find((c) => {
+      const cCc = String(c.cc || '').trim();
+      const cNombre = String(c.nombre || '').trim();
+      return (payload.cc && cCc.toLowerCase() === payload.cc.toLowerCase()) ||
+        (!payload.cc && payload.nombre && cNombre.toLowerCase() === payload.nombre.toLowerCase());
+    });
+
+    if (!target) {
+      target = {
+        id: crypto.randomUUID(),
+        cc: payload.cc || 'S/N',
+        nombre: payload.nombre || 'Cliente sin nombre',
+        pages: [newPage],
+        createdAt: now,
+        updatedAt: now,
+      };
+      clients.unshift(target);
+    } else {
+      target.pages = Array.isArray(target.pages) ? target.pages : [];
+      target.pages.unshift(newPage);
+      target.updatedAt = now;
+    }
+
+    root.version = 1;
+    root.updatedAt = now;
+    root.clients = clients;
+
+    const postRes = await fetch(vaultUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(root),
+    });
+    if (!postRes.ok) {
+      setStatus(`Error del servidor (${postRes.status})`, 'err');
+      return;
+    }
+
+    const savedName = target.nombre || 'la app';
     await clearAllFields();
-    setStatus(`Enviado a ${data.client?.nombre || 'la app'} y limpiado.`, 'ok');
+    setStatus(`Enviado a ${savedName} y limpiado.`, 'ok');
   } catch (err) {
     setStatus(`No se pudo conectar con ${baseUrl}`, 'err');
   } finally {

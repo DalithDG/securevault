@@ -11,6 +11,10 @@
   ],
   "rewrites": [
     {
+      "source": "/api/vault/:userId",
+      "destination": "/api/vault?userId=:userId"
+    },
+    {
       "source": "/((?!api/|.*\\..*).*)",
       "destination": "/index.html"
     }
