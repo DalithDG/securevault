@@ -2,6 +2,8 @@ const DEFAULT_SERVER_URL = 'https://securevault-dgteams.vercel.app';
 
 const serverUrlInput = document.getElementById('serverUrlInput');
 const userIdInput = document.getElementById('userIdInput');
+const settingsBtn = document.getElementById('settingsBtn');
+const settingsDrawer = document.getElementById('settingsDrawer');
 const lookupBtn = document.getElementById('lookupBtn');
 const clearBtn = document.getElementById('clearBtn');
 const ccInput = document.getElementById('ccInput');
@@ -10,6 +12,7 @@ const siteInput = document.getElementById('siteInput');
 const urlInput = document.getElementById('urlInput');
 const usernameInput = document.getElementById('usernameInput');
 const passwordInput = document.getElementById('passwordInput');
+const togglePassBtn = document.getElementById('togglePassBtn');
 const saveBtn = document.getElementById('saveBtn');
 const statusEl = document.getElementById('status');
 const listEl = document.getElementById('list');
@@ -22,6 +25,11 @@ function getBaseUrl() {
 
 function getUserId() {
   return (userIdInput.value || '').trim().toLowerCase();
+}
+
+function setStatus(text, type = '') {
+  statusEl.textContent = text;
+  statusEl.className = `status-pill ${type}`.trim();
 }
 
 async function init() {
@@ -43,7 +51,7 @@ async function init() {
     if (data.pendingCredential.url) urlInput.value = data.pendingCredential.url;
     if (data.pendingCredential.username) usernameInput.value = data.pendingCredential.username;
     if (data.pendingCredential.password) passwordInput.value = data.pendingCredential.password;
-    statusEl.textContent = 'Credenciales capturadas listas para enviar a la app.';
+    setStatus('Credenciales capturadas listas para enviar.', 'ok');
   }
 }
 
@@ -52,6 +60,7 @@ async function clearAllFields() {
   nombreInput.value = '';
   usernameInput.value = '';
   passwordInput.value = '';
+  passwordInput.type = 'password';
   listEl.innerHTML = '';
   await chrome.storage.local.remove(['clients', 'pendingCredential', 'lastSync']);
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -64,7 +73,8 @@ async function saveToAppAndClear() {
   const baseUrl = getBaseUrl();
   const userId = getUserId();
   if (!userId) {
-    statusEl.textContent = 'Ingresa el correo de tu cuenta para enviarlo a la app.';
+    setStatus('Ingresa el correo de tu cuenta para enviarlo.', 'err');
+    userIdInput.focus();
     return;
   }
   await chrome.storage.local.set({ serverUrl: baseUrl, userId });
@@ -79,15 +89,16 @@ async function saveToAppAndClear() {
   };
 
   if (!payload.url || !payload.username || !payload.password) {
-    statusEl.textContent = 'Completa URL, Usuario y Password para enviar.';
+    setStatus('Completa URL, Usuario y Password.', 'err');
     return;
   }
   if (!payload.cc && !payload.nombre) {
-    statusEl.textContent = 'Ingresa CC o Nombre del cliente.';
+    setStatus('Ingresa CC o Nombre del cliente.', 'err');
     return;
   }
 
-  statusEl.textContent = 'Enviando datos a la app...';
+  setStatus('Enviando datos a la app...');
+  saveBtn.disabled = true;
   try {
     const res = await fetch(
       `${baseUrl}/api/vault/${encodeURIComponent(userId)}/extension/save`,
@@ -101,14 +112,16 @@ async function saveToAppAndClear() {
     let data = {};
     try { data = JSON.parse(raw); } catch (_) {}
     if (!res.ok || !data.ok) {
-      statusEl.textContent = data.error || `Error del servidor (${res.status})`;
+      setStatus(data.error || `Error del servidor (${res.status})`, 'err');
       return;
     }
 
     await clearAllFields();
-    statusEl.textContent = `Enviado a la app (${data.client?.nombre || 'cliente'}) y limpiado de la extensión.`;
+    setStatus(`Enviado a ${data.client?.nombre || 'la app'} y limpiado.`, 'ok');
   } catch (err) {
-    statusEl.textContent = `No se pudo conectar con ${baseUrl}`;
+    setStatus(`No se pudo conectar con ${baseUrl}`, 'err');
+  } finally {
+    saveBtn.disabled = false;
   }
 }
 
@@ -116,17 +129,18 @@ async function lookupCurrentSite() {
   const baseUrl = getBaseUrl();
   const userId = getUserId();
   if (!userId) {
-    statusEl.textContent = 'Ingresa el correo de tu cuenta primero.';
+    setStatus('Ingresa el correo de tu cuenta primero.', 'err');
+    userIdInput.focus();
     return;
   }
   await chrome.storage.local.set({ serverUrl: baseUrl, userId });
   listEl.innerHTML = '';
-  statusEl.textContent = `Buscando credenciales para ${currentHost || 'este sitio'}...`;
+  setStatus(`Buscando en ${currentHost || 'este sitio'}...`);
 
   try {
     const res = await fetch(`${baseUrl}/api/vault/${encodeURIComponent(userId)}`);
     if (!res.ok) {
-      statusEl.textContent = `Error del servidor (${res.status})`;
+      setStatus(`Error del servidor (${res.status})`, 'err');
       return;
     }
     const payload = await res.json();
@@ -143,21 +157,21 @@ async function lookupCurrentSite() {
     }
 
     if (matches.length === 0) {
-      statusEl.textContent = 'No hay credenciales guardadas para este sitio.';
+      setStatus('No hay credenciales guardadas para este sitio.');
       return;
     }
 
-    statusEl.textContent = `${matches.length} coincidencia(s) para ${currentHost}.`;
+    setStatus(`${matches.length} coincidencia(s) encontradas.`, 'ok');
     for (const { client, page } of matches) {
       const card = document.createElement('div');
-      card.className = 'card';
+      card.className = 'match-card';
       card.innerHTML = `
-        <div class="client">${escapeHtml(client.nombre || '')} • CC: ${escapeHtml(client.cc || '')}</div>
-        <div class="site">${escapeHtml(page.siteName || page.url || 'Página')}</div>
-        <div class="meta">Usuario: ${escapeHtml(page.username || '')}</div>
-        <div class="actions">
-          <button class="fill-btn">Autocompletar</button>
-          <button class="copy-btn secondary">Copiar clave</button>
+        <div class="match-client">${escapeHtml(client.nombre || '')} • CC: ${escapeHtml(client.cc || '')}</div>
+        <div class="match-site">${escapeHtml(page.siteName || page.url || 'Página')}</div>
+        <div class="match-user">${escapeHtml(page.username || '')}</div>
+        <div class="match-actions">
+          <button class="btn-pill fill-btn">Autocompletar</button>
+          <button class="btn-pill copy-btn">Copiar clave</button>
         </div>
       `;
       card.querySelector('.fill-btn').addEventListener('click', async () => {
@@ -172,17 +186,17 @@ async function lookupCurrentSite() {
           });
         }
         listEl.innerHTML = '';
-        statusEl.textContent = 'Autocompletado y vista limpiada.';
+        setStatus('Autocompletado y vista limpiada.', 'ok');
       });
       card.querySelector('.copy-btn').addEventListener('click', async () => {
         await navigator.clipboard.writeText(page.password || '');
         listEl.innerHTML = '';
-        statusEl.textContent = 'Contraseña copiada y vista limpiada.';
+        setStatus('Clave copiada y vista limpiada.', 'ok');
       });
       listEl.appendChild(card);
     }
   } catch (err) {
-    statusEl.textContent = `No se pudo conectar con ${baseUrl}`;
+    setStatus(`No se pudo conectar con ${baseUrl}`, 'err');
   }
 }
 
@@ -194,10 +208,16 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+settingsBtn.addEventListener('click', () => {
+  settingsDrawer.classList.toggle('open');
+});
+togglePassBtn.addEventListener('click', () => {
+  passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
+});
 saveBtn.addEventListener('click', saveToAppAndClear);
 lookupBtn.addEventListener('click', lookupCurrentSite);
 clearBtn.addEventListener('click', async () => {
   await clearAllFields();
-  statusEl.textContent = 'Datos eliminados de la extensión.';
+  setStatus('Datos eliminados de la extensión.');
 });
 init();

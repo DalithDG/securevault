@@ -1,54 +1,333 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
   <meta charset="utf-8" />
   <style>
-    body { width: 350px; font-family: system-ui, sans-serif; padding: 12px; margin: 0; background: #f8f7fc; color: #211a2c; }
-    h3 { color: #7139C9; margin: 0 0 8px; display: flex; justify-content: space-between; align-items: center; gap: 6px; }
-    .head-actions { display: flex; gap: 5px; }
-    .row { display: flex; gap: 6px; margin-bottom: 6px; }
-    input { width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1px solid #d7cff0; border-radius: 8px; font-size: 12px; }
-    button { background: #7139C9; color: white; border: none; padding: 7px 10px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 600; }
-    button.secondary { background: #ede7fa; color: #4c2394; }
-    button.danger { background: #fdecea; color: #c5221f; }
-    .status { font-size: 11px; color: #665c7a; margin: 6px 0; }
-    .form-box { background: white; border: 1px solid #d7cff0; border-radius: 10px; padding: 10px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 6px; }
-    .list { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-    .card { background: white; border: 1px solid #e7e1f5; border-radius: 10px; padding: 10px; }
-    .client { font-size: 11px; color: #7139C9; font-weight: 700; margin-bottom: 2px; }
-    .site { font-size: 13px; font-weight: 700; }
-    .meta { font-size: 11px; color: #5b526d; word-break: break-all; margin: 2px 0; }
-    .actions { display: flex; gap: 6px; margin-top: 6px; }
+    :root {
+      --accent: #7139C9;
+      --accent-hover: #5f2cb0;
+      --accent-soft: rgba(113, 57, 201, 0.12);
+      --bg: #f5f4f8;
+      --surface: rgba(255, 255, 255, 0.88);
+      --surface-solid: #ffffff;
+      --text: #1c1926;
+      --muted: #6b657b;
+      --border: rgba(28, 25, 38, 0.09);
+      --input-bg: rgba(113, 57, 201, 0.045);
+      --success: #188038;
+      --success-bg: rgba(24, 128, 56, 0.11);
+      --danger: #d93025;
+      --danger-bg: rgba(217, 48, 37, 0.1);
+      --shadow: 0 8px 24px rgba(24, 16, 48, 0.08);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --accent: #9b6dff;
+        --accent-hover: #ae87ff;
+        --accent-soft: rgba(155, 109, 255, 0.16);
+        --bg: #13111a;
+        --surface: rgba(31, 27, 42, 0.86);
+        --surface-solid: #1f1b2a;
+        --text: #f3f1fa;
+        --muted: #a19ab3;
+        --border: rgba(255, 255, 255, 0.09);
+        --input-bg: rgba(255, 255, 255, 0.06);
+        --success: #5bb974;
+        --success-bg: rgba(91, 185, 116, 0.14);
+        --danger: #f28b82;
+        --danger-bg: rgba(242, 139, 130, 0.14);
+        --shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      width: 368px;
+      margin: 0;
+      padding: 0;
+      font: 13px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: var(--surface);
+      backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .logo {
+      width: 28px;
+      height: 28px;
+      border-radius: 9px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      display: grid;
+      place-items: center;
+    }
+
+    .brand-title {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+
+    .brand-sub {
+      font-size: 10.5px;
+      color: var(--muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    button {
+      font-family: inherit;
+      border: none;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: background-color 140ms ease, transform 100ms ease-out, opacity 140ms ease;
+    }
+
+    button:active { transform: scale(0.97); }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      padding: 10px 14px;
+      width: 100%;
+      font-size: 13px;
+      box-shadow: 0 4px 12px rgba(113, 57, 201, 0.25);
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+
+    .btn-pill {
+      background: var(--accent-soft);
+      color: var(--accent);
+      padding: 6px 10px;
+      font-size: 11.5px;
+    }
+    .btn-pill:hover { opacity: 0.88; }
+
+    .btn-icon {
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      background: transparent;
+      color: var(--muted);
+      border-radius: 8px;
+    }
+    .btn-icon:hover { background: var(--input-bg); color: var(--text); }
+
+    .btn-danger-pill {
+      background: var(--danger-bg);
+      color: var(--danger);
+      padding: 6px 10px;
+      font-size: 11.5px;
+    }
+
+    .content {
+      padding: 12px 14px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card {
+      background: var(--surface-solid);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .section-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1.3fr;
+      gap: 8px;
+    }
+
+    .field {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    input {
+      width: 100%;
+      font-family: inherit;
+      font-size: 12.5px;
+      padding: 8.5px 11px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      background: var(--input-bg);
+      color: var(--text);
+      outline: none;
+      transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+    }
+
+    input::placeholder { color: var(--muted); opacity: 0.85; }
+
+    input:focus {
+      background: var(--surface-solid);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .pass-field input { padding-right: 34px; }
+    .eye-btn {
+      position: absolute;
+      right: 5px;
+      width: 26px;
+      height: 26px;
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .settings-drawer {
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      padding-top: 4px;
+    }
+    .settings-drawer.open { display: flex; }
+
+    .status-pill {
+      font-size: 11.5px;
+      padding: 7px 10px;
+      border-radius: 10px;
+      background: var(--input-bg);
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .status-pill.ok { background: var(--success-bg); color: var(--success); font-weight: 600; }
+    .status-pill.err { background: var(--danger-bg); color: var(--danger); font-weight: 600; }
+
+    .list {
+      max-height: 180px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .match-card {
+      background: var(--surface-solid);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .match-client { font-size: 11px; font-weight: 700; color: var(--accent); }
+    .match-site { font-size: 13px; font-weight: 700; }
+    .match-user { font-size: 11.5px; color: var(--muted); word-break: break-all; }
+    .match-actions { display: flex; gap: 6px; margin-top: 6px; }
+    .match-actions button { flex: 1; padding: 7px 10px; }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; }
+    }
   </style>
 </head>
 <body>
-  <h3>
-    <span>SecureVault</span>
-    <div class="head-actions">
-      <button id="lookupBtn" class="secondary">Autocompletar sitio</button>
-      <button id="clearBtn" class="danger">Limpiar</button>
+  <header class="header">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-title">SecureVault</div>
+        <div class="brand-sub">Captura rápida</div>
+      </div>
     </div>
-  </h3>
+    <div class="header-actions">
+      <button id="lookupBtn" class="btn-pill" title="Buscar credenciales de este sitio">Autocompletar</button>
+      <button id="clearBtn" class="btn-danger-pill" title="Limpiar campos y vista">Limpiar</button>
+      <button id="settingsBtn" class="btn-icon" title="Configurar servidor">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.77 1.02 1.4 1.11H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+    </div>
+  </header>
 
-  <div class="row">
-    <input id="serverUrlInput" placeholder="URL servidor (https://securevault-dgteams.vercel.app)" />
-  </div>
-  <div class="row">
-    <input id="userIdInput" placeholder="Correo de tu cuenta en la app" />
-  </div>
+  <main class="content">
+    <div class="card">
+      <div class="section-label">Cuenta destino</div>
+      <input id="userIdInput" type="email" placeholder="Correo de tu cuenta en la app" />
+      <div id="settingsDrawer" class="settings-drawer">
+        <div class="section-label">Servidor</div>
+        <input id="serverUrlInput" placeholder="https://securevault-dgteams.vercel.app" />
+      </div>
+    </div>
 
-  <div class="form-box">
-    <input id="ccInput" placeholder="CC / Cédula del cliente" />
-    <input id="nombreInput" placeholder="Nombre del cliente" />
-    <input id="siteInput" placeholder="Nombre de la página (opcional)" />
-    <input id="urlInput" placeholder="URL" />
-    <input id="usernameInput" placeholder="Usuario / Correo" />
-    <input id="passwordInput" type="password" placeholder="Password" />
-    <button id="saveBtn">Enviar a la app y limpiar</button>
-  </div>
+    <div class="card">
+      <div class="section-label">Cliente y página</div>
+      <div class="grid-2">
+        <input id="ccInput" placeholder="CC / Cédula" />
+        <input id="nombreInput" placeholder="Nombre del cliente" />
+      </div>
+      <input id="siteInput" placeholder="Nombre del sitio (opcional)" />
+      <input id="urlInput" placeholder="URL" />
+      <input id="usernameInput" placeholder="Usuario / Correo" />
+      <div class="field pass-field">
+        <input id="passwordInput" type="password" placeholder="Password" />
+        <button id="togglePassBtn" type="button" class="eye-btn" title="Mostrar / ocultar">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
+      <button id="saveBtn" class="btn-primary">Enviar a la app y limpiar</button>
+    </div>
 
-  <div id="status" class="status">Captura los datos y envíalos a tu bóveda.</div>
-  <div id="list" class="list"></div>
+    <div id="status" class="status-pill">Captura los datos y envíalos a tu bóveda.</div>
+    <div id="list" class="list"></div>
+  </main>
+
   <script src="popup.js"></script>
 </body>
 </html>
