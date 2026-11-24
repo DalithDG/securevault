@@ -1,4 +1,4 @@
-const { getDb, setCors } = require('../_lib/mongo');
+const { getDb, setCors } = require('../../_lib/mongo');
 
 module.exports = async (req, res) => {
   setCors(res);

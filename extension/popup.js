@@ -97,9 +97,11 @@ async function saveToAppAndClear() {
         body: JSON.stringify(payload),
       },
     );
-    const data = await res.json();
+    const raw = await res.text();
+    let data = {};
+    try { data = JSON.parse(raw); } catch (_) {}
     if (!res.ok || !data.ok) {
-      statusEl.textContent = data.error || 'No se pudo guardar en la app.';
+      statusEl.textContent = data.error || `Error del servidor (${res.status})`;
       return;
     }
 
