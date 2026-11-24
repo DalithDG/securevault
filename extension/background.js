@@ -1,10 +1,12 @@
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('SecureVault extension installed');
+  chrome.storage.local.remove(['clients', 'lastSync']);
 });
 
 chrome.runtime.onMessage.addListener((msg, sender) => {
   if (msg.type === 'CAPTURE_CREDENTIALS') {
     chrome.storage.local.set({ pendingCredential: msg.payload });
-    chrome.action.setBadgeText({ text: '1', tabId: sender.tab.id });
+    if (sender.tab?.id) {
+      chrome.action.setBadgeText({ text: '1', tabId: sender.tab.id });
+    }
   }
 });
